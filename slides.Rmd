@@ -95,7 +95,7 @@ categorical target variables (*sampleCat*, *maxCat*).
  - *addRandom* - add a random variable to the distance computation (very low weight)
  
 ## Donor Imputation - matchImpute
-Random within groups imputation, grouping variables are dropped sequentially in case no all values are missing in a group.
+Random within groups imputation, grouping variables are dropped sequentially in case all values are missing in a group.
 ```{r,echo=TRUE,eval=FALSE}
 matchImpute(data,
   variable = colnames(data)[!colnames(data) %in% match_var],
