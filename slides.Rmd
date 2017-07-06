@@ -1,0 +1,157 @@
+---
+title: "Visualisation and Imputation of Missing Values"
+author: "Alexander Kowarik (Statistics Austria), Matthias Templ (ZHAW Winterthur)"
+date: "July 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(VIM)
+data(sleep, package="VIM")
+x <- sleep[, -(8:10)]
+x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
+x2 <- sleep[, c("Exp", "Sleep")]
+data(tao, package = "VIM")
+x3 <- tao[, c("Air.Temp", "Humidity")]
+data(chorizonDL, package = "VIM")
+x4 <- chorizonDL[,c(15,101:110)]
+x5 <- log(chorizonDL[, c(4,5,8,10,11,16:17,19,25,29,37,38,40)])
+```
+
+## Outline / R Package
+ - Content:
+    - Tools for visualization of missing data structures (and imputed values)
+    - Tools for imputation
+ - Current CRAN version 4.7.0
+ - Development version and issue tracking on github [https://github.com/statistikat/VIM](https://github.com/statistikat/VIM)
+ - This presentation and the R code [https://github.com/alexkowa/VIM_ISI2017](https://github.com/alexkowa/VIM_ISI2017)
+ - [JSS paper on imputation of missing values with VIM, Kowarik, Templ](https://www.jstatsoft.org/article/view/v074i07)
+ - [Advances in Data Analysis and Classification paper on visualization with VIM, Templ, Alfons, Filzmoser](https://www.researchgate.net/publication/226283718_Exploring_incomplete_data_using_visualization_techniques)
+
+## Visualisation of Missing Data
+ - Always important: knowledge about the structure of missing values Visualisation vs statistical tests.
+- not a lot of literature about it with focus on missing data
+- not a lot of visualization tools for data sets including missing values R package VIM supports the visualization (also with a GUI).
+
+## Aggregation Plots
+```{r,echo=TRUE,results='hide'}
+aggr(sleep)
+```
+
+## Missing Values in Matrix Form
+```{r,echo=TRUE,results='hide',warning=FALSE}
+matrixplot(x, sortby = "BrainWgt")
+```
+
+## Univariate Plots
+```{r,echo=TRUE,results='hide',warning=FALSE}
+par(mfrow=c(1,2)); histMiss(x2); spineMiss(x3)
+```
+
+## Bivariate Plots
+```{r,echo=TRUE,results='hide',warning=FALSE}
+marginplot(x3)
+```
+
+## Multivariate Plots
+```{r,echo=TRUE,results='hide',warning=FALSE}
+parcoordMiss(x4,plotvars=2:11, interactive = FALSE)
+```
+
+## Multiple Plots
+```{r,echo=TRUE,results='hide',warning=FALSE}
+pbox(x5)
+```
+
+
+## Donor Imputation - hotdeck
+```{r,echo=TRUE,eval=FALSE}
+hotdeck(data, variable = NULL, ord_var = NULL,
+  domain_var = NULL, makeNA = NULL, NAcond = NULL,
+  impNA = TRUE, donorcond = NULL, imp_var = TRUE,
+  imp_suffix = "imp")
+```
+ - *data* - data.frame
+ - *variable* - variables to be imputed
+ - *ord_var* - variables to sort by
+ - *domain_var* - variables to build imputation classes
+ - a random sort variable is always be added
+ 
+## Donor Imputation - kNN
+```{r,echo=TRUE,eval=FALSE}
+kNN(data, variable = colnames(data), metric = NULL,
+  k = 5, dist_var = colnames(data), weights = NULL,
+  numFun = median , catFun = maxCat , makeNA = NULL,
+  NAcond = NULL, impNA = TRUE, donorcond = NULL,
+  mixed = vector(), mixed.constant = NULL, trace = FALSE ,
+  imp_var = TRUE, imp_suffix = "imp", addRandom = FALSE)
+```
+ - *dist_var* - variables used for distance combination
+ - *weights* - weights for distance computation
+ - *numFun*, *catFun* - aggregation function for numerical or
+categorical target variables (*sampleCat*, *maxCat*).
+ - *addRandom* - add a random variable to the distance computation (very low weight)
+ 
+## Donor Imputation - matchImpute
+Random within groups imputation, grouping variables will be dropped sequentially if no all values are missing in a group.
+```{r,echo=TRUE,eval=FALSE}
+matchImpute(data,
+  variable = colnames(data)[!colnames(data) %in% match_var],
+  match_var, imp_var = TRUE, imp_suffix = "imp")
+```
+ - *match_var* variables to build groups
+ 
+## Iterative (Robust) Regression Imputation (1)
+```{r,echo=TRUE,eval=FALSE}
+irmi(x, eps = 5, maxit = 100, mixed = NULL,
+  mixed.constant = NULL, count = NULL, step = FALSE ,
+  robust = FALSE , takeAll = TRUE, noise = TRUE,
+  noise.factor = 1, force = FALSE , robMethod = "MM",
+  force.mixed = TRUE, mi = 1, addMixedFactors = FALSE ,
+  trace = FALSE , init.method = "kNN")
+```
+ - *robust* - robust or non-robust
+ - *step* - *stepAIC* in every iteration
+ - *mixed* - column indices of semi-continuous variables
+ - *count* - column indices of count variables (Poisson)
+ - *noise* - add a random error to the imputed value
+ - *mi* - number of imputations $\Rightarrow$ multiple imputation
+
+## Imputation Benchmarking (1)
+
+```{r,echo=FALSE,results='hide'}
+library(ggplot2);library(microbenchmark)
+load("timingHD2.RData")
+fillup <- function(x,l){
+  x <- c(x,rep(NA,l-length(x)))
+  x
+}
+tmed <- do.call("rbind",lapply(mb,function(x)fillup(print(x,unit="s")$median,4)))
+tlq <- do.call("rbind",lapply(mb,function(x)fillup(print(x,unit="s")$lq,4)))
+tuq <- do.call("rbind",lapply(mb,function(x)fillup(print(x,unit="s")$uq,4)))
+
+out <- data.frame(method=c(rep("matchImpute",7),rep("hotdeck",7),rep("kNN",7),rep("irmi",7)),
+                  medianTime=c(tmed[,1],tmed[,2],tmed[,3],tmed[,4]),
+                  lq=c(tlq[,1],tlq[,2],tlq[,3],tlq[,4]),
+                  uq=c(tuq[,1],tuq[,2],tuq[,3],tlq[,4]),
+                  nrow=rep(nRowsAll,4),
+                  nmissing=rep(nRowsAll,4)/10)
+
+ggplot(out[out$nrow<=1e+04,],aes(y=medianTime,x=nrow,color=method))+
+  geom_ribbon(alpha=.1,color="transparent",aes(fill=method,ymax=uq,ymin=lq))+
+  geom_line()
+```
+
+## Imputation Benchmarking (2)
+
+```{r,echo=FALSE,results='hide'}
+ggplot(out[out$method%in%c("matchImpute","hotdeck"),],aes(y=medianTime,x=nrow,color=method))+
+  geom_ribbon(alpha=.1,color="transparent",aes(fill=method,ymax=uq,ymin=lq))+
+  geom_line()+
+  geom_vline(xintercept = 1e+04,color="grey70")
+```
+
+## Iterative Robust Regression Imputation (2)
+ ![irmi imputation](cont-semi-impr-cla.pdf "irmi imputation")
+
