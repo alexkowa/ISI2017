@@ -32,8 +32,8 @@ x5 <- log(chorizonDL[, c(4,5,8,10,11,16:17,19,25,29,37,38,40)])
 ## Visualisation of Missing Data
 - Always important: knowledge about the structure of missing values. Visualisation vs statistical tests.
 - literature with focus on visualization of missing data is sparse
-- only a few visualization tools missing data
-- R package VIM supports the visualization (also with a GUI).
+- only a few visualization tools on missing data available
+- R package VIM supports the visualization (including also a GUI).
 
 ## Aggregation Plots
 ```{r,echo=TRUE,results='hide'}
