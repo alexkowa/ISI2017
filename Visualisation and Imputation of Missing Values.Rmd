@@ -7,7 +7,7 @@ output: ioslides_presentation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(VIM)
+library(VIM);library(dplyr);library(simputation)
 data(sleep, package="VIM")
 x <- sleep[, -(8:10)]
 x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
@@ -32,8 +32,8 @@ x5 <- log(chorizonDL[, c(4,5,8,10,11,16:17,19,25,29,37,38,40)])
 ## Visualisation of Missing Data
 - Always important: knowledge about the structure of missing values. Visualisation vs statistical tests.
 - literature with focus on visualization of missing data is sparse
-- only a few visualization tools on missing data available
-- R package VIM supports the visualization (including also a GUI).
+- only a few visualization tools missing data
+- R package VIM supports the visualization (also with a GUI).
 
 ## Aggregation Plots
 ```{r,echo=TRUE,results='hide'}
@@ -158,3 +158,20 @@ ggplot(out[out$method%in%c("matchImpute","hotdeck"),],aes(y=medianTime,x=nrow,co
 knitr::include_graphics("cont-semi-impr-cla.jpg")
 ```
 
+## One more thing: simputation
+ - Great package by [Mark van der Loo](markvanderloo.github.io)
+ - A lot of different imputation methods including methods kNN and hotdeck from VIM
+ 
+```{r,echo=TRUE,eval=FALSE}
+sleepImp <- sleep %>% hotdeck(variable="NonD",domain_var="Danger") %>%
+  kNN(variable="Dream",dist_var=c("BodyWgt","BrainWgt"))
+
+sleepImp <- sleep %>% impute_shd( NonD~Danger,backend="VIM") %>%
+  impute_knn(Dream~BodyWgt+BrainWgt, backend="VIM")
+```
+
+## Thank you
+Feedback always welcome:
+ - [alexander.kowarik@statistik.gv.at](mailto:alexander.kowarik@statistik.gv.at)
+ - [https://github.com/statistikat/VIM](https://github.com/statistikat/VIM)
+ - [Twitter: Alexkvienna](https://twitter.com/Alexkvienna)
