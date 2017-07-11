@@ -1,11 +1,11 @@
 ---
-title: "Simulation of public-use complex survey and population data"
+title: "Simulation of public-use files from complex survey and population data"
 author: "Matthias Templ (ZHAW Winterthur), Alexander Kowarik (Statistics Austria)"
 date: "July 2017"
 output:
-  beamer_presentation: default
   ioslides_presentation:
     widescreen: yes
+    
 ---
 
 ```{r setup, include=FALSE}
@@ -44,31 +44,6 @@ represented correctly
     * aggregated information from samples
     * known marginal distributions from population
 
-
-
-## Methods
-
-1. <b>Synthetic reconstruction</b> / <b>Deterministic reweighting</b> are based on conditional probabilites. Often used in combination with calibration methods (IPF, IPU, HIPF)
-2. <b>Combinatorial optimization</b> are used to calibrate populations and to enrich a population e.g. with detailed geographical information (SA, GA)
-3. <b>Model-based methods</b> for the simulation of close-to-reality  
-populationens using regression methods
-
-
-
-
-
-
-
-## Model-based approach - workflow
-
-Example workflow individuals within households survey data:
-
-<div style="height: 550px; text-align:center">
-  <img src="imgs/model.png" alt="" style="max-height: 90%;margin-left:auto;margin-right: auto;" /> 
-</div>
- 
-
-
 ## Model-based approach 
 
 - In general, the procedure consists of four steps:
@@ -78,34 +53,6 @@ Example workflow individuals within households survey data:
   * the splitting continuous variables into components
 - Stratification: allows to account for heterogenities (e.g. regional differences)
 
-
-
-## Model-based approach
-
-- Household structure (core-variables): simulated separately for each
-combination of strata and household size.
-- Number of households: estimated using the HT-estimator
-- As few variables as possible (due to confidentiality reasons) are
-simulated using a sampling approach
-- This builds up a realistic structure of the core variables
-- Finally, additional variables are simulated using a regression/ML-based approach using either 
- * all existing variables  
- * a defined model
- * basic structural variables
-
-
-
-## (Simplified) Rule
-
-- fit on the sample data  
-- using this information, predict on population data
-
-E.g. citizenship is available in the sample but not in the population. 
-Build a model on the <b>sample data</b> using predictors that are available on the sample and population. Predict citizenship on the <b>population data</b>.
-
-
-
-
 ## Model-based approach - the basic structure file
 
 - <b>direct</b>: estimation of the population totals for each combination of stratum and household size using the Horvitz-Thompson estimator  
@@ -114,21 +61,6 @@ Build a model on the <b>sample data</b> using predictors that are available on t
 
 Example of variables spanning the basic structure: age × region × sex   
 ($\forall$ strata & households)
-
-We will see later in a demo:  
-#### <b>simStructure()</b>
-
-
-
-## Model-based approach 
-
-- Input: survey data   
-
-- Model: variable ∼ covariates (better: model matrix) fitted on sample survey. First predictors are the basic structure variables
-
-- Regression coefficients used to predict on population (do not use expected values)
-
-
 
 
 ## Model-based approach - fitting
@@ -201,20 +133,6 @@ Similar to the categorical case, but models differ.
 - parallel computing is applied automatically  
 - efficient implementation
 
-## Special classes in simPop 
-
-simPop uses S4 classes, the most important classes defined: 
-
-- <b>dataObj</b>: Contains <b>information</b> on the population and <b>survey data</b>
-to be used as input for the generation of the synthetic population. Typically, information on the variables containing the household and person IDs, household size, sampling weights, stratification information, and type of data (i.e., sample or a population).  
-- <b>simPopObj</b>: Contains information on the <b>sample</b> (in slot sample), the
-<b>population</b> (slot pop), and optionally some margins in the form of a <b>table</b> (slot table).
-Objects in slot sample and pop must be objects of class <b>dataObj</b>. 
-
-
-
-
-
 ## Define the structure  
 
 Create an object of class *dataObj* with function **specifyInput()**. 
@@ -238,32 +156,6 @@ class(inp)
 ## attr(,"package")
 ## [1] "simPop"
 ```
-
-
-
-## Print the dataObj
-
-
-```r
-inp
-```
-
-```
-## 
-##  --
-## survey sample of size 11725 x 19 
-## 
-##  Selected important variables: 
-## 
-##  household ID: db030
-##  personal ID: pid
-##  variable household size: hsize
-##  sampling weight: rb050
-##  strata: db040
-##  --
-```
-
-
 
 ## Simulating the basic structural variables 
 
@@ -308,71 +200,7 @@ synthP
 ## db030,hsize,age,rb090,db040,pid,weight,pl030,pb220a
 ```
 
-## Simulating continuous variables  
-```r
-# multinomial model with random draws
-synthP <- simContinuous(synthP, additional="netIncome",
-    upper=2e+05, equidist=FALSE) 
-synthP
-```
-
-```
-## 
-## --
-## synthetic population  of size 
-##  8182010 x 11 
-## 
-## build from a sample of size 
-## 11725 x 19
-## --
-## 
-## variables in the population:
-## db030,hsize,age,rb090,db040,pid,weight,pl030,pb220a,netIncomeCat,netIncome
-```
-
-- Simulation of components with **simComponents()**
-
-
-
-
-## Census information to calibrate 
-
-- Assumption: external information (n-dimensional table) is available, e.g marginals on *region* $\times$ *gender* $\times$ *exonomic status*.
-
-
-
-```r
-margins
-```
-
-<font size="6">  
-
-```
-##            db040  rb090 pb220a freq
-## 1     Burgenland   male     AT  797
-## 2  Lower Austria   male     AT 4363
-## 3         Vienna   male     AT 3749
-## 4      Carinthia   male     AT 1568
-## 5         Styria   male     AT 3139
-## 6  Upper Austria   male     AT 3741
-## 7       Salzburg   male     AT 1379
-## 8          Tyrol   male     AT 1566
-## 9     Vorarlberg   male     AT  819
-## 10    Burgenland female     AT  821
-## 11 Lower Austria female     AT 4426
-## 12        Vienna female     AT 4357
-## 13     Carinthia female     AT 1729
-## 14        Styria female     AT 3354
-## 15 Upper Austria female     AT 3962
-## 16      Salzburg female     AT 1508
-## 17         Tyrol female     AT 1886
-## 18    Vorarlberg female     AT  902
-## 19    Burgenland   male     EU   26
-## 20 Lower Austria   male     EU   53
-...
-```
-</font> 
-
+almost the same for *simContinuous()*
 
 
 ## Census information to calibrate 
@@ -394,17 +222,7 @@ synthPadj <- calibPop(synthP, split="db040", temp=1,
 ```
 
 Now: margins of the sample <b>equals known margins of the population</b>
-(not shown here, calculation time between 45 min and some hours)
-
-
-## Results
-```r
-tab <- spTable(synthP, select=c("rb090","db040","hsize"))
-spMosaic(tab, labeling=labeling_border(abbreviate=c(db040=TRUE)))
-```
-```{r, out.width = "500px"}
-knitr::include_graphics("imgs/plot_mosaic.png")
-```
+(not shown here, long computation time.)
 
 
 ## Results
@@ -429,23 +247,13 @@ knitr::include_graphics("imgs/cdfs.png")
 
 
 
-## Other features of simPop
-
-age heaping
-
-```{r, out.width = "500px"}
-knitr::include_graphics("imgs/age1.png")
-```
-
-
-## Other features of simPop
-
+## Other feature of simPop - age heaping
 Correct for age heaping using truncated (log-)normal distributions on individual level (function <b>correctHeap()</b>)
 
-```{r, out.width = "500px"}
+```{r, out.width = "400px",fig.show='hold'}
+knitr::include_graphics("imgs/age1.png")
 knitr::include_graphics("imgs/age4.png")
 ```
-
 
 
 ## Conclusions
