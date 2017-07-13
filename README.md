@@ -1,6 +1,6 @@
 # VIM presentation and material for ISI 2017
 
-[presentation](https://github.com/alexkowa/ISI2017/raw/master/Visualisation_and Imputation_of_Missing_Values.pdf)
+[presentation](https://github.com/alexkowa/ISI2017/raw/master/Visualisation_and_Imputation_of_Missing_Values.pdf)
 
 [JSS paper on visulation of missing values with VIM](https://www.jstatsoft.org/article/view/v074i07)
 
